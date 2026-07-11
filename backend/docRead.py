@@ -1,4 +1,4 @@
-from exctractor import extract_file
+from backend.exctractors import extract_file
 import os
 
 folder = "Sample_docs"

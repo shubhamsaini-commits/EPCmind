@@ -54,42 +54,76 @@ def extract_txt(path):
 
 def extract_excel(path):
     """
-    Returns row-by-row text, one 'record' per row, so each row
-    can later become its own chunk (e.g. one RFI, one schedule task).
+    Returns a list of dicts — one clean dict per real row.
+    Junk columns, empty cells, and blank rows are already dropped here.
     """
-    df = pd.read_excel(path)
+    raw = pd.read_excel(path, header=None)
+
+    # Find the real header row: first row where most cells are non-null
+    header_row_idx = 0
+    for i in range(min(5, len(raw))):
+        non_null = raw.iloc[i].notna().sum()
+        if non_null >= len(raw.columns) * 0.6:
+            header_row_idx = i
+            break
+
+    df = pd.read_excel(path, header=header_row_idx)
+    df = df.dropna(axis=1, how="all")  # drop fully empty columns
+    df.columns = [str(c).strip() for c in df.columns]
+
     records = []
-    for i, row in df.iterrows():
-        row_text = " | ".join(f"{col}: {row[col]}" for col in df.columns)
-        records.append(row_text)
-    return "\n".join(records)
+    for _, row in df.iterrows():
+        pairs = {}
+        for col in df.columns:
+            val = row[col]
+            if pd.isna(val) or str(val).strip() == "":
+                continue
+            if col.startswith("Unnamed"):
+                continue
+            pairs[col] = str(val).strip()
+
+        if not pairs:
+            continue
+
+        records.append(pairs)
+
+    return records
 
 
 def extract_file(path):
     """
     Universal entry point. Detects file type by extension,
-    returns normalized text + metadata dict.
+    returns normalized content + metadata dict.
+
+    For unstructured docs (docx/pdf/txt): content is a single string under "text".
+    For structured docs (xlsx/csv): content is a list of row-dicts under "records".
     """
     ext = os.path.splitext(path)[1].lower()
 
     if ext == ".docx":
-        text = extract_docx(path)
+        content = extract_docx(path)
         doc_type = "unstructured"
     elif ext == ".pdf":
-        text = extract_pdf(path)
+        content = extract_pdf(path)
         doc_type = "unstructured"
     elif ext in [".txt", ".md"]:
-        text = extract_txt(path)
+        content = extract_txt(path)
         doc_type = "unstructured"
     elif ext in [".xlsx", ".xls", ".csv"]:
-        text = extract_excel(path)
+        content = extract_excel(path)
         doc_type = "structured"
     else:
         raise ValueError(f"Unsupported file type: {ext}")
 
-    return {
+    result = {
         "filename": os.path.basename(path),
         "filetype": ext,
-        "doc_type": doc_type,   # "structured" vs "unstructured" — you'll use this to route later
-        "text": text,
+        "doc_type": doc_type,
     }
+
+    if doc_type == "structured":
+        result["records"] = content   # list of dicts
+    else:
+        result["text"] = content      # single string
+
+    return result

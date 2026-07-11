@@ -21,3 +21,17 @@ def ask_ai(prompt: str) -> str:
         contents=prompt
     )
     return response.text
+
+
+
+
+def embed_text(text: str) -> list[float]:
+    """
+    Turns text into a vector (list of numbers) representing its meaning.
+    Single entry point — swap provider here only.
+    """
+    result = _client.models.embed_content(
+        model="gemini-embedding-001",
+        contents=text
+    )
+    return result.embeddings[0].values
