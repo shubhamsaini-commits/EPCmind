@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 
@@ -13,33 +13,46 @@ export default function StatCard({ label, value, index = 0 }) {
   const cardRef = useRef(null);
   const numberRef = useRef(null);
   const counter = useRef({ val: 0 });
+  const hasAnimatedIn = useRef(false);
 
+  // Initial fade-up animation (runs once on mount)
   useGSAP(
     () => {
-      // Staggered fade-up on mount, delayed per card index
-      gsap.from(cardRef.current, {
-        y: 16,
-        opacity: 0,
-        duration: 0.5,
-        delay: index * 0.08,
-        ease: "power2.out",
-      });
+      if (hasAnimatedIn.current) return; // Only animate on first render
+      hasAnimatedIn.current = true;
 
-      // Count-up, slowing near the end (power2.out easing does this naturally)
-      gsap.to(counter.current, {
-        val: value,
-        duration: 1.2,
-        delay: index * 0.08 + 0.15,
-        ease: "power2.out",
-        onUpdate: () => {
-          if (numberRef.current) {
-            numberRef.current.textContent = Math.round(counter.current.val).toLocaleString();
-          }
+      gsap.fromTo(
+        cardRef.current,
+        {
+          y: 16,
+          opacity: 0,
         },
-      });
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.5,
+          delay: index * 0.08,
+          ease: "power2.out",
+        }
+      );
     },
-    { scope: cardRef, dependencies: [value] }
+    { scope: cardRef }
   );
+
+  // Counter update (runs when value changes from backend)
+  useEffect(() => {
+    gsap.to(counter.current, {
+      val: value,
+      duration: 1.2,
+      delay: hasAnimatedIn.current ? 0 : index * 0.08 + 0.15,
+      ease: "power2.out",
+      onUpdate: () => {
+        if (numberRef.current) {
+          numberRef.current.textContent = Math.round(counter.current.val).toLocaleString();
+        }
+      },
+    });
+  }, [value, index]);
 
   return (
     <div

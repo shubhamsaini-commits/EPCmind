@@ -13,7 +13,7 @@ from chunker import chunk_document
 from exctractors import extract_file
 import os 
 import shutil
-
+from compilance import save_compliance_results , load_compliance_results
 
 
 app = FastAPI(title="EPC Intelligence API")
@@ -90,22 +90,24 @@ def upload_document(file: UploadFile = File(...)):
         "status": "success",
     }
 
-last_compliance_results = []  # module-level, updated by /compliance-check
-
 @app.post("/compliance-check")
 def compliance_check():
-    global last_compliance_results
     results = run_compliance_check()
-    last_compliance_results = results
-    return {"results": results}
+    data = save_compliance_results(results)
+    return data  # {"results": [...], "ran_at": "..."}
+
+@app.get("/compliance-check")
+def get_last_compliance_check():
+    return load_compliance_results()
 
 
 @app.get("/stats")
 def stats():
-    data = get_stats()
-    deviations = sum(1 for r in last_compliance_results if r.get("status") == "Deviation")
+    doc_data = get_stats()
+    compliance_data = load_compliance_results()
+    deviations = sum(1 for r in compliance_data["results"] if r.get("status") == "Deviation")
     return {
-        "total_documents": data["total_documents"],
-        "total_chunks": data["total_chunks"],
+        "total_documents": doc_data["total_documents"],
+        "total_chunks": doc_data["total_chunks"],
         "deviations_found": deviations,
     }

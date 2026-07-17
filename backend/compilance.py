@@ -46,3 +46,27 @@ Example format:
         return []
 
     return results
+
+
+import json
+import os
+from datetime import datetime
+
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+COMPLIANCE_FILE = os.path.join(BASE_DIR, "last_compliance_check.json")
+
+def save_compliance_results(results):
+    data = {
+        "results": results,
+        "ran_at": datetime.now().isoformat(),
+    }
+    with open(COMPLIANCE_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+    return data
+
+def load_compliance_results():
+    if not os.path.exists(COMPLIANCE_FILE):
+        return {"results": [], "ran_at": None}
+    with open(COMPLIANCE_FILE, "r") as f:
+        return json.load(f)

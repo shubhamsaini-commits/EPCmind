@@ -62,6 +62,8 @@ export const askQuestion = (question, documentType = null) =>
 export const runComplianceCheck = (payload = {}) =>
   client.post("/compliance-check", payload);
 
+export const getLastComplianceCheck = () => client.get("/compliance-check");
+
 /**
  * ---- 3. DOCUMENT UPLOAD ----
  * Expected FastAPI endpoint: POST /upload  (multipart/form-data)
