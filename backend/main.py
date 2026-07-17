@@ -21,7 +21,8 @@ app = FastAPI(title="EPC Intelligence API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # your Vite dev server
+    allow_origins=["http://localhost:5173" ,
+                   "https://EPCmind-App.netlify.app"],  # your Vite dev server
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -58,7 +59,13 @@ def get_documents():
 
 
 # upload mechanism
-UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploaded_docs")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+UPLOAD_DIR = os.getenv(
+    "UPLOAD_DIR",
+    os.path.join(BASE_DIR, "uploaded_docs")
+)
+
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 

@@ -1,8 +1,12 @@
 import chromadb
 from llm_api_provider import embed_text
+import os
+CHROMA_PATH = os.getenv("CHROMA_PATH", "./chroma_db")
 
-_chroma_client = chromadb.PersistentClient(path="./chroma_db")
+os.makedirs(CHROMA_PATH, exist_ok=True)
+_chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
 _collection = _chroma_client.get_or_create_collection(name="epc_documents")
+
 
 
 def add_chunks(chunks: list[dict]):
