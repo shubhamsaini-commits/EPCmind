@@ -7,11 +7,12 @@ backend/*.pyc
 backend/.env
 
 # Node
-frontend/node_modules/
+Landing/node_modules/
+Dashboard/node_modules/
 frontend/dist/
 
 # Frontend env
-frontend/.env
+Dashboard/.env
 
 # OS
 .DS_Store

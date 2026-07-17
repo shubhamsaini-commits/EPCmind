@@ -57,3 +57,42 @@ def search(query: str, n_results: int = 5, filter_document_type: str = None):
             "distance": results["distances"][0][i],  # lower = more similar
         })
     return matches
+
+
+
+def list_documents():
+    """
+    Groups all stored chunks by filename, returning one summary row per
+    document instead of raw chunks. Powers GET /documents.
+    """
+    # Pull every chunk's metadata — cheap since we only need metadata, not embeddings
+    all_data = _collection.get(include=["metadatas"])
+
+    grouped = {}
+    for metadata in all_data["metadatas"]:
+        filename = metadata["filename"]
+        if filename not in grouped:
+            grouped[filename] = {
+                "filename": filename,
+                "document_type": metadata["document_type"],
+                "filetype": metadata["filetype"],
+                "chunk_count": 0,
+            }
+        grouped[filename]["chunk_count"] += 1
+
+    return list(grouped.values())
+
+
+def get_stats():
+    """
+    Aggregate counts for the dashboard's stat cards.
+    Deliberately cheap — just summarizes list_documents(), no new queries.
+    """
+    documents = list_documents()
+    total_documents = len(documents)
+    total_chunks = sum(doc["chunk_count"] for doc in documents)
+
+    return {
+        "total_documents": total_documents,
+        "total_chunks": total_chunks,
+    }
