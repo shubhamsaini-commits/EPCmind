@@ -29,10 +29,12 @@ export default function FinalCTA() {
             <div className="cta-glow" aria-hidden="true" />
             <h2>Stop searching documents. Start asking questions.</h2>
             <p>Upload your project documents. Ask engineering questions. Get traceable answers.</p>
-            <Link to="https://epcmind-app.netlify.app/"></Link>
+            <Link to="https://epcmind-app.netlify.app/">
+
             <button className="cta-button">
                 <span>Try the Demo</span>
             </button>
+            </Link>
         </section>
     );
 }
