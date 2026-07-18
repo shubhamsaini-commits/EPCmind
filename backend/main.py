@@ -21,8 +21,7 @@ app = FastAPI(title="EPC Intelligence API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173" ,
-                   "https://EPCmind-App.netlify.app"],  # your Vite dev server
+    allow_origins=["*"],  # your Vite dev server
     allow_methods=["*"],
     allow_headers=["*"],
 )
