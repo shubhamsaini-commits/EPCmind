@@ -1,3 +1,4 @@
+import { deleteDocument } from "../api/client";
 import { useEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
@@ -79,12 +80,16 @@ export default function Documents() {
         open={!!deleteTarget}
         title="Remove document?"
         onClose={() => setDeleteTarget(null)}
-        onConfirm={() => {
-          // BACKEND NOTE: wire this to DELETE /documents/{filename} if you
-          // build that endpoint; for now this just removes it client-side.
-          setDocs((prev) => prev.filter((d) => d.filename !== deleteTarget.filename));
-          toast?.show(`${deleteTarget.filename} removed`);
-          setDeleteTarget(null);
+        onConfirm={async() => {
+          try {
+            await deleteDocument(deleteTarget.filename);
+            setDocs((prev) => prev.filter((d) => d.filename !== deleteTarget.filename));
+            toast?.show(`${deleteTarget.filename} removed`);
+          } catch (err) {
+            toast?.show("Failed to remove document", "error");
+          } finally {
+            setDeleteTarget(null);
+          }
         }}
         confirmLabel="Remove"
       >
