@@ -20,8 +20,19 @@ const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
 
 const client = axios.create({
   baseURL: API_BASE,
-  timeout: 30000, // embedding + LLM calls can take a few seconds — don't set this too low
-  withCredentials: true, // STEP: naya option add kiya
+  timeout: 30000,
+});
+
+// STEP: Naya interceptor add kiya.
+// WHY: Har request jaane se pehle, ye automatically localStorage se
+// workspace_id nikal ke 'X-Workspace-Id' header mein daal dega —
+// taaki humein har API call mein manually ye likhna na pade.
+client.interceptors.request.use((config) => {
+  const workspaceId = localStorage.getItem("workspace_id");
+  if (workspaceId) {
+    config.headers["X-Workspace-Id"] = workspaceId;
+  }
+  return config;
 });
 
 /**
@@ -57,9 +68,15 @@ export const uploadDocument = (file, onProgress) => {
 // ___________________________________________________________________
 // Adding Delete function
 export async function deleteDocument(filename) {
+  const workspaceId = localStorage.getItem("workspace_id");
+  const ownerKey = localStorage.getItem("owner_key") || "";   // STEP: naya
+
   const res = await fetch(`${API_BASE}/documents/${encodeURIComponent(filename)}`, {
     method: "DELETE",
-    credentials: "include", // STEP: naya option add kiya
+    headers: {
+      "X-Workspace-Id": workspaceId,
+      "X-Owner-Key": ownerKey,   // STEP: naya, WHY: backend isse verify karega
+    },
   });
   return { data: await res.json() };
 }
@@ -74,5 +91,28 @@ export const getDocuments = () => client.get("/documents");
  * ---- 5. DASHBOARD STATS (Home page) ----
  */
 export const getStats = () => client.get("/stats");
+
+/**
+ * ---- 6. OPEN/DOWNLOAD A DOCUMENT ----
+ * STEP: Naya function.
+ * WHY: File ko fetch karke (workspace header ke saath), browser mein
+ * naye tab mein khulwata hai. Seedha <a href> se nahi ho sakta tha
+ * kyunki custom headers bhejni zaroori hain.
+ */
+export async function openDocument(filename) {
+  const workspaceId = localStorage.getItem("workspace_id");
+
+  const res = await fetch(`${API_BASE}/documents/${encodeURIComponent(filename)}/file`, {
+    headers: { "X-Workspace-Id": workspaceId },
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to open file");
+  }
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  window.open(url, "_blank");
+}
 
 export default client;

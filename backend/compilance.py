@@ -25,7 +25,7 @@ def find_latest_document(doc_type_label, session_id):
     matches = []
     for doc in docs:
         if doc["document_type"] == doc_type_label:
-            full_path = os.path.join(UPLOAD_DIR, doc["filename"])
+            full_path = os.path.join(UPLOAD_DIR, session_id, doc["filename"])   # STEP: workspace folder bhi path mein include kiya
             if os.path.exists(full_path):
                 matches.append(full_path)
 

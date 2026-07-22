@@ -1,3 +1,4 @@
+
 # EPCmind
 
 **AI-powered Industrial Knowledge Intelligence** — a RAG-based assistant that ingests EPC (Engineering, Procurement, Construction) project documents and lets you query them in natural language, with source citations, confidence scoring, and automated compliance checking.
@@ -145,3 +146,4 @@ Frontend runs at `http://localhost:5173`
 - Knowledge graph visualization of entities across documents
 - Server-side chat history storage
 - Multi-project / multi-tenant support
+

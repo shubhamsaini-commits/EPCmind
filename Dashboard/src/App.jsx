@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ToastProvider } from "./components/Toast";
+import WorkspaceGate from "./components/WorkspaceGate";
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/NavBar/Navbar";
 import Home from "./pages/Home";
@@ -65,7 +66,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <ToastProvider>
-        <Layout />
+        <WorkspaceGate>
+          <Layout />
+        </WorkspaceGate>
       </ToastProvider>
     </BrowserRouter>
   );

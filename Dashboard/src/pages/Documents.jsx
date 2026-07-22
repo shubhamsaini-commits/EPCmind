@@ -1,4 +1,4 @@
-import { deleteDocument } from "../api/client";
+import { deleteDocument, openDocument } from "../api/client";
 import { useEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
@@ -118,18 +118,27 @@ function DocRow({ doc, onDelete }) {
 
   return (
     <tr ref={rowRef} className="border-b border-border-soft/60 text-sm">
-      <td className="py-3.5 text-text-primary">{doc.filename}</td>
+      <td className="py-3.5">
+        <button
+        onClick={() => openDocument(doc.filename)}
+        className="text-text-primary hover:text-accent hover:underline transition-colors text-left"
+        >
+          {doc.filename}
+        </button>
+      </td>
       <td className="py-3.5">
         <DocumentBadge type={doc.document_type} />
       </td>
       <td className="py-3.5 text-text-secondary">{doc.chunk_count ?? "—"}</td>
       <td className="py-3.5 text-right">
-        <button
+        {localStorage.getItem("owner_key") && (
+          <button
           onClick={onDelete}
           className="text-text-muted hover:text-status-fail text-xs transition-colors"
-        >
-          Remove
-        </button>
+          >
+            Remove
+          </button>
+        )}
       </td>
     </tr>
   );

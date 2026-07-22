@@ -1,3 +1,4 @@
+from fastapi.responses import FileResponse
 from fastapi import FastAPI, Request, Response
 from fastapi import UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,6 +16,7 @@ import os
 import shutil
 import uuid
 from compilance import save_compliance_results, load_compliance_results
+from owner_store import register_workspace, is_owner
 
 
 app = FastAPI(title="EPC Intelligence API")
@@ -31,24 +33,39 @@ app.add_middleware(
 SESSION_COOKIE_NAME = "session_id"
 
 
-def get_session_id(request: Request, response: Response) -> str:
-    """
-    Reads the session_id cookie if present, otherwise generates a new one
-    and sets it on the response. This gives each browser/user its own
-    isolated view of documents without requiring login.
-    """
-    session_id = request.cookies.get(SESSION_COOKIE_NAME)
-    if not session_id:
-        session_id = str(uuid.uuid4())
-        response.set_cookie(
-            key=SESSION_COOKIE_NAME,
-            value=session_id,
-            max_age=60 * 60 * 24 * 30,  # 30 days
-            httponly=True,
-            samesite="lax",
-        )
-    return session_id
+from fastapi import HTTPException
 
+def get_session_id(request: Request, response: Response = None) -> str:
+    """
+    STEP: Poora function logic badla — cookie padhne ki jagah ab
+    'X-Workspace-Id' header padhta hai.
+    WHY: Workspace code ab user khud decide karta hai (Create/Join se),
+    isliye backend ko naya ID generate karne ki zaroorat nahi — sirf
+    jo bhi ID frontend bheje, wahi use karo. Agar header missing hai,
+    matlab user ne abhi tak koi workspace choose nahi kiya — clear
+    error do taaki frontend use "select a workspace" screen dikha sake.
+    """
+    workspace_id = request.headers.get("X-Workspace-Id")
+    if not workspace_id:
+        raise HTTPException(
+            status_code=400,
+            detail="No workspace selected. Please create or join a workspace first."
+        )
+    return workspace_id
+
+@app.post("/workspace/create")
+def create_workspace(request: Request):
+    """
+    STEP: Naya endpoint.
+    WHY: Jab frontend pe user 'Create Workspace' dabaye, ye endpoint
+    call hoga — request mein jo naya workspace_id (X-Workspace-Id header
+    mein) frontend ne generate kiya hai, use yaha register karke ek
+    secret owner_key banayenge aur wapas bhejenge. Ye key sirf creator
+    ke paas jayegi.
+    """
+    workspace_id = get_session_id(request, None)
+    owner_key = register_workspace(workspace_id)
+    return {"workspace_id": workspace_id, "owner_key": owner_key}
 
 @app.get("/")
 def root():
@@ -90,15 +107,41 @@ def get_documents(request: Request, response: Response):
 def remove_document(filename: str, request: Request, response: Response):
     session_id = get_session_id(request, response)
 
-    # Only removes chunks belonging to this session's own document
+    # STEP: Naya check add kiya — owner_key header verify karna.
+    # WHY: Sirf workspace ka creator hi delete kar sake, koi bhi
+    # joined member nahi. Header missing ya galat hone par 403 error.
+    owner_key = request.headers.get("X-Owner-Key")
+    if not is_owner(session_id, owner_key):
+        raise HTTPException(
+            status_code=403,
+            detail="Only the workspace creator can delete documents."
+        )
+
     delete_document(filename, session_id=session_id)
 
-    file_path = os.path.join(UPLOAD_DIR, filename)
+    file_path = os.path.join(UPLOAD_DIR, session_id, filename)   # STEP: workspace folder ke andar dhoondo
     if os.path.exists(file_path):
         os.remove(file_path)
 
     return {"status": "success", "message": f"{filename} removed"}
 
+#New endpoint
+@app.get("/documents/{filename}/file")
+def get_document_file(filename: str, request: Request, response: Response):
+    """
+    STEP: Naya endpoint — file ko actual serve karta hai.
+    WHY: Frontend mein filename pe click karte hi ye endpoint call hoga,
+    jo sirf usi workspace ke folder se file dhoondh ke bhejega —
+    doosre workspace ki same-naam file kabhi accidentally nahi khulegi.
+    """
+    session_id = get_session_id(request, response)
+    safe_filename = os.path.basename(filename)  # extra safety, path traversal se bachne ke liye
+    file_path = os.path.join(UPLOAD_DIR, session_id, safe_filename)
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found in your workspace.")
+
+    return FileResponse(file_path, filename=safe_filename)
 
 # upload mechanism
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -129,11 +172,16 @@ def upload_document(file: UploadFile = File(...), request: Request = None, respo
     if len(content) > MAX_FILE_SIZE:
         return {"status": "error", "message": "File too large. Max size is 20 MB"}
 
-    save_path = os.path.join(UPLOAD_DIR, safe_filename)
+    # STEP: Workspace-specific subfolder banaya.
+    # WHY: Har workspace ki files apne alag folder mein rahein, taaki
+    # do alag workspaces mein same filename ho to bhi collision na ho.
+    workspace_dir = os.path.join(UPLOAD_DIR, session_id)
+    os.makedirs(workspace_dir, exist_ok=True)
+
+    save_path = os.path.join(workspace_dir, safe_filename)
 
     with open(save_path, "wb") as f:
         f.write(content)
-
     try:
         extracted = extract_file(save_path)
     except ValueError as e:
