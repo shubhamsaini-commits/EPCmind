@@ -8,14 +8,21 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-Python-009688?style=for-the-badge&logo=fastapi&logoColor=white)](./backend)
 [![Gemini](https://img.shields.io/badge/Google-Gemini-8E75FF?style=for-the-badge&logo=googlegemini&logoColor=white)](https://ai.google.dev/)
 [![ChromaDB](https://img.shields.io/badge/Vector_DB-ChromaDB-FF6B35?style=for-the-badge)](https://www.trychroma.com/)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Launch_EPCmind-00C7B7?style=for-the-badge&logo=netlify&logoColor=white)](https://epcmind.netlify.app/)
 
 **Turn scattered project documents into a living intelligence layer.**
 
-[Explore the product](#-product) · [See the architecture](#-architecture) · [Run locally](#-run-it-locally) · [API reference](#-api)
+[Launch the live demo](https://epcmind.netlify.app/) · [Explore the product](#-product) · [See the architecture](#-architecture) · [Run locally](#-run-it-locally) · [API reference](#-api)
 
 </div>
 
 ---
+### Hosted demo
+
+Try EPCmind at **[epcmind.netlify.app](https://epcmind.netlify.app/)**.
+
+> **Render free-tier cold start:** The backend may take **1–2 minutes** to wake after a period of inactivity. If the first request is slow or briefly fails, wait a moment and retry—the server is restarting.
+
 
 ## The problem
 
@@ -196,6 +203,12 @@ cd Landing
 npm install
 npm run dev -- --port 5174
 ```
+
+### Hosted demo
+
+Try EPCmind at **[epcmind.netlify.app](https://epcmind.netlify.app/)**.
+
+> **Render free-tier cold start:** The backend may take **1–2 minutes** to wake after a period of inactivity. If the first request is slow or briefly fails, wait a moment and retry—the server is restarting.
 
 ## 90-second demo path
 
