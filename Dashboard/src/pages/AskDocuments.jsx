@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import ChatMessage from "../components/ChatMessage";
 import ThinkingSkeleton from "../components/ThinkingSkeleton";
 import EmptyState from "../components/EmptyState";
@@ -13,12 +13,23 @@ const DOC_TYPES = ["All", "Specification", "Vendor Submittal", "RFI", "Procureme
  * what powers the citation chips under each AI message.
  */
 export default function AskDocuments() {
-  const [messages, setMessages] = useState([]);
+  // by this command we update the message state
+  // _________________________________________________
+  const [messages, setMessages] = useState(() => {              
+    const saved = localStorage.getItem("epc_chat_history");
+    return saved ? JSON.parse(saved) : [];
+  });
+  // _________________________________________________
+
   const [input, setInput] = useState("");
   const [docType, setDocType] = useState("All");
   const [loading, setLoading] = useState(false);
   const toast = useToast();
   const scrollRef = useRef(null);
+  // we adding new useEffect
+  useEffect(() => {
+    localStorage.setItem("epc_chat_history", JSON.stringify(messages));
+  }, [messages]);
 
   const handleSend = async () => {
     const question = input.trim();
